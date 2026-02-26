@@ -1,0 +1,11 @@
+version: 2
+sources:
+  - name: bronze_marketing
+    database: BRONZE
+    schema: BRONZE_MARKETING
+    loaded_at_field: _FIVETRAN_SYNCED
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+    tables:
+      - name: MARKETING_CAMPAIGNS
