@@ -1,0 +1,15 @@
+# DO NOT commit to git — add to .gitignore
+myntra_clv:
+  target: prod
+  outputs:
+    prod:
+      type: snowflake
+      account: "{{ env_var('DBT_SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('DBT_SNOWFLAKE_USER') }}"
+      password: "{{ env_var('DBT_SNOWFLAKE_PASSWORD') }}"
+      role: TRANSFORMER_ROLE
+      database: SILVER
+      warehouse: TRANSFORM_WH
+      schema: SILVER_ERP   # default; overridden per model via +schema
+      threads: 4
+      client_session_keep_alive: false
