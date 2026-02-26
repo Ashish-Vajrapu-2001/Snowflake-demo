@@ -1,0 +1,70 @@
+connector_name: Myntra_CLV_CRM_connector
+
+# Fivetran connector type — copied exactly from LLD (RULE F1)
+service: azure_sql_db
+service_justification: >
+  Source type "Azure SQL CRM" maps to service "azure_sql_db"
+  as stated in the LLD. Not rederived.
+
+# CDC method — copied exactly from LLD (RULE F1)
+update_method: NATIVE_UPDATE
+cdc_note: >
+  NATIVE_UPDATE: Change Tracking must be enabled on source tables.
+  Run sql/02_enable_change_tracking.sql on [GAP: Database Name for SRC-002] before first sync.
+  TELEPORT sources: no Change Tracking needed; Fivetran queries tables directly.
+
+# Source connection
+source:
+  host: "{{PLACEHOLDER_SRC_002_HOST}}"
+  port: 1433
+  database: "[GAP: Database Name for SRC-002]"
+  username: "{{PLACEHOLDER_SRC_002_USER}}"
+  password: "{{PLACEHOLDER_SOURCE_DB_PASSWORD}}"
+
+# Snowflake destination
+destination:
+  database: "BRONZE"
+  schema_prefix: "BRONZE_CRM"
+  # Fivetran creates: BRONZE.BRONZE_CRM.{TABLE_NAME}
+
+# Sync schedule
+sync_frequency_minutes: 15
+paused: true  # unpause only after verifying destination connection
+
+# Tables — Fivetran handles initial full load + incremental CDC for all
+# FULL tables: Fivetran truncates and reloads every sync
+# INCREMENTAL tables: Fivetran applies only changed rows via Change Tracking
+tables:
+  Customers:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [CUSTOMER_ID]
+  CustomerRegistrationSource:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [REGISTRATION_ID]
+  INCIDENTS:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [INCIDENT_ID]
+  INTERACTIONS:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [INTERACTION_ID]
+  SURVEYS:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [SURVEY_ID]
+  # write every table from the metadata — no abbreviations (RULE C1)
+
+# Fivetran system columns added automatically to every Bronze table:
+#   _fivetran_synced   TIMESTAMP_TZ  — incremental watermark for dbt Silver models
+#   _fivetran_deleted  BOOLEAN       — soft-delete flag; filter in Silver dbt models
+
+# Post-sync trigger
+post_sync_trigger:
+  type: webhook
+  target: dbt_core_silver_job
+  note: >
+    After each sync completes, Fivetran triggers the dbt Core Silver run.
+    Configure in Fivetran dashboard -> Connector -> Transformations -> dbt.
