@@ -1,0 +1,15 @@
+version: 2
+sources:
+  - name: bronze_crm
+    database: BRONZE
+    schema: BRONZE_CRM
+    loaded_at_field: _FIVETRAN_SYNCED
+    freshness:
+      warn_after: {count: 60, period: minute}
+      error_after: {count: 240, period: minute}
+    tables:
+      - name: Customers
+      - name: CustomerRegistrationSource
+      - name: INCIDENTS
+      - name: INTERACTIONS
+      - name: SURVEYS
