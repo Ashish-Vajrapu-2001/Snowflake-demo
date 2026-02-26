@@ -1,0 +1,17 @@
+version: 2
+sources:
+  - name: bronze_erp
+    database: BRONZE
+    schema: BRONZE_ERP
+    loaded_at_field: _FIVETRAN_SYNCED
+    freshness:
+      warn_after: {count: 60, period: minute}
+      error_after: {count: 240, period: minute}
+    tables:
+      - name: OE_ORDER_HEADERS_ALL
+      - name: OE_ORDER_LINES_ALL
+      - name: ADDRESSES
+      - name: CITY_TIER_MASTER
+      - name: MTL_SYSTEM_ITEMS_B
+      - name: CATEGORIES
+      - name: BRANDS
