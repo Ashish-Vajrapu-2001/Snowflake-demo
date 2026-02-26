@@ -1,0 +1,106 @@
+version: 2
+models:
+  - name: stg_erp__oe_order_headers_all
+    description: "Staging model for ERP Order Headers"
+    columns:
+      - name: ORDER_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+      - name: CUSTOMER_ID
+        tests:
+          - not_null:
+              config: {severity: error}
+          - relationships:
+              to: ref('snp_customers')
+              field: CUSTOMER_ID
+              config: {severity: error}
+      - name: TOTAL_AMOUNT
+        tests:
+          - not_null:
+              config: {severity: error}
+          - dbt_utils.accepted_range:
+              min_value: 0
+              config: {severity: error}
+      - name: ORDER_DATE
+        tests:
+          - not_null:
+              config: {severity: error}
+          - dbt_expectations.expect_column_values_to_be_between:
+              max_value: "CURRENT_DATE"
+              config: {severity: warn}
+
+  - name: stg_erp__oe_order_lines_all
+    description: "Staging model for ERP Order Lines"
+    columns:
+      - name: LINE_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+      - name: ORDER_ID
+        tests:
+          - not_null:
+              config: {severity: error}
+          - relationships:
+              to: ref('stg_erp__oe_order_headers_all')
+              field: ORDER_ID
+              config: {severity: error}
+      - name: QUANTITY
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              config: {severity: warn}
+
+  - name: stg_erp__addresses
+    description: "Staging model for ERP Addresses"
+    columns:
+      - name: ADDRESS_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_erp__city_tier_master
+    description: "Staging model for ERP City Tier Master"
+    columns:
+      - name: TIER
+        tests:
+          - not_null:
+              config: {severity: warn}
+
+  - name: stg_erp__categories
+    description: "Staging model for ERP Categories"
+    columns:
+      - name: CATEGORY_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_erp__brands
+    description: "Staging model for ERP Brands"
+    columns:
+      - name: BRAND_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+
+  - name: snp_mtl_system_items_b
+    description: "Snapshot for ERP System Items (SCD2)"
+    columns:
+      - name: ITEM_ID
+        tests:
+          - not_null:
+              config: {severity: error}
+      - name: STATUS
+        tests:
+          - not_null:
+              config: {severity: warn}
