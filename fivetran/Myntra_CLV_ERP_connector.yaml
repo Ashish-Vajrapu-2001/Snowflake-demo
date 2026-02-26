@@ -1,0 +1,78 @@
+connector_name: Myntra_CLV_ERP_connector
+
+# Fivetran connector type — copied exactly from LLD (RULE F1)
+service: azure_sql_db
+service_justification: >
+  Source type "Azure SQL ERP" maps to service "azure_sql_db"
+  as stated in the LLD. Not rederived.
+
+# CDC method — copied exactly from LLD (RULE F1)
+update_method: NATIVE_UPDATE
+cdc_note: >
+  NATIVE_UPDATE: Change Tracking must be enabled on source tables.
+  Run sql/02_enable_change_tracking.sql on [GAP: Database Name for SRC-001] before first sync.
+  TELEPORT sources: no Change Tracking needed; Fivetran queries tables directly.
+
+# Source connection
+source:
+  host: "{{PLACEHOLDER_SRC_001_HOST}}"
+  port: 1433
+  database: "[GAP: Database Name for SRC-001]"
+  username: "{{PLACEHOLDER_SRC_001_USER}}"
+  password: "{{PLACEHOLDER_SOURCE_DB_PASSWORD}}"
+
+# Snowflake destination
+destination:
+  database: "BRONZE"
+  schema_prefix: "BRONZE_ERP"
+  # Fivetran creates: BRONZE.BRONZE_ERP.{TABLE_NAME}
+
+# Sync schedule
+sync_frequency_minutes: 15
+paused: true  # unpause only after verifying destination connection
+
+# Tables — Fivetran handles initial full load + incremental CDC for all
+# FULL tables: Fivetran truncates and reloads every sync
+# INCREMENTAL tables: Fivetran applies only changed rows via Change Tracking
+tables:
+  OE_ORDER_HEADERS_ALL:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [ORDER_ID]
+  OE_ORDER_LINES_ALL:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [LINE_ID]
+  ADDRESSES:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [ADDRESS_ID]
+  CITY_TIER_MASTER:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [CITY_TIER_ID]
+  MTL_SYSTEM_ITEMS_B:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [ITEM_ID]
+  CATEGORIES:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [CATEGORY_ID]
+  BRANDS:
+    enabled: true
+    load_type: INCREMENTAL
+    primary_keys: [BRAND_ID]
+  # write every table from the metadata — no abbreviations (RULE C1)
+
+# Fivetran system columns added automatically to every Bronze table:
+#   _fivetran_synced   TIMESTAMP_TZ  — incremental watermark for dbt Silver models
+#   _fivetran_deleted  BOOLEAN       — soft-delete flag; filter in Silver dbt models
+
+# Post-sync trigger
+post_sync_trigger:
+  type: webhook
+  target: dbt_core_silver_job
+  note: >
+    After each sync completes, Fivetran triggers the dbt Core Silver run.
+    Configure in Fivetran dashboard -> Connector -> Transformations -> dbt.
