@@ -1,0 +1,76 @@
+version: 2
+models:
+  - name: snp_customers
+    description: "Snapshot for CRM Customers (SCD2)"
+    columns:
+      - name: CUSTOMER_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+      - name: EMAIL
+        tests:
+          - not_null:
+              config: {severity: error}
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+              config: {severity: warn}
+      - name: REGISTRATION_DATE
+        tests:
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_crm__customerregistrationsource
+    description: "Staging model for CRM Customer Registration Source"
+    columns:
+      - name: CUSTOMER_ID
+        tests:
+          - not_null:
+              config: {severity: error}
+      - name: CHANNEL
+        tests:
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_crm__incidents
+    description: "Staging model for CRM Incidents"
+    columns:
+      - name: INCIDENT_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_crm__interactions
+    description: "Staging model for CRM Interactions"
+    columns:
+      - name: INTERACTION_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+
+  - name: stg_crm__surveys
+    description: "Staging model for CRM Surveys"
+    columns:
+      - name: SURVEY_ID
+        tests:
+          - unique:
+              config: {severity: error}
+          - not_null:
+              config: {severity: error}
+      - name: NPS_SCORE
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 10
+              config: {severity: warn}
+      - name: CSAT_SCORE
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 5
+              config: {severity: warn}
